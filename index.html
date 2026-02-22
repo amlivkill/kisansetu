@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kisan AI Agent MVP — CHANGE TechLab</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Tiro+Devanagari+Hindi:ital@0;1&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c1a0e;
+  --bg2: #111f13;
+  --bg3: #162a19;
+  --card: #1a2e1d;
+  --card2: #1f3623;
+  --border: #2a4a2e;
+  --border2: #3a6040;
+  --green: #4ade80;
+  --green2: #22c55e;
+  --green-dim: rgba(74,222,128,0.12);
+  --green-dim2: rgba(74,222,128,0.06);
+  --gold: #fbbf24;
+  --gold-dim: rgba(251,191,36,0.12);
+  --amber: #f59e0b;
+  --text: #e2f0e4;
+  --text2: #9ab89e;
+  --text3: #5a7a5e;
+  --red: #f87171;
+  --blue: #60a5fa;
+  --blue-dim: rgba(96,165,250,0.12);
+  --r: 16px;
+  --r2: 10px;
+  --shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  font-family: 'Syne', sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* grid bg */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(rgba(74,222,128,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74,222,128,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events:none; z-index:0;
+}
+
+.app { position:relative; z-index:1; display:flex; flex-direction:column; min-height:100vh; }
+
+/* ── TOPBAR ── */
+.topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 28px; border-bottom:1px solid var(--border);
+  background:rgba(12,26,14,0.9); backdrop-filter:blur(12px);
+  position:sticky; top:0; z-index:100;
+}
+.tb-brand { display:flex; align-items:center; gap:12px; }
+.tb-logo {
+  width:36px; height:36px; border-radius:10px;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  box-shadow: 0 0 20px rgba(34,197,94,0.3);
+}
+.tb-brand h1 { font-size:15px; font-weight:800; color:var(--text); letter-spacing:0.5px; }
+.tb-brand p { font-size:10px; color:var(--green); letter-spacing:2px; text-transform:uppercase; }
+
+.tb-right { display:flex; align-items:center; gap:12px; }
+.tb-pill {
+  display:flex; align-items:center; gap:6px;
+  background:var(--green-dim); border:1px solid rgba(74,222,128,0.25);
+  border-radius:20px; padding:5px 14px;
+}
+.tb-dot { width:6px; height:6px; background:var(--green); border-radius:50%; animation:pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,222,128,0.3)} 50%{opacity:0.6;box-shadow:0 0 0 4px rgba(74,222,128,0)} }
+.tb-pill span { font-size:11px; color:var(--green); font-weight:700; }
+
+.api-status { font-size:11px; color:var(--text3); }
+
+/* ── TABS ── */
+.tabs {
+  display:flex; gap:0; border-bottom:1px solid var(--border);
+  background:var(--bg2); padding:0 28px; overflow-x:auto;
+}
+.tab {
+  padding:14px 22px; font-size:13px; font-weight:700;
+  color:var(--text3); border-bottom:2px solid transparent;
+  cursor:pointer; white-space:nowrap; transition:all 0.2s;
+  display:flex; align-items:center; gap:8px;
+  background:none; border-left:none; border-right:none; border-top:none;
+}
+.tab:hover { color:var(--text2); }
+.tab.active { color:var(--green); border-bottom-color:var(--green); }
+.tab-badge {
+  background:var(--green-dim); border:1px solid rgba(74,222,128,0.2);
+  border-radius:10px; padding:1px 7px; font-size:10px; color:var(--green);
+}
+
+/* ── PANELS ── */
+.panel { display:none; padding:28px; max-width:960px; margin:0 auto; width:100%; }
+.panel.active { display:block; animation:fadeIn 0.3s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+/* ── LABELS ── */
+.sec { font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--text3); margin-bottom:14px; display:flex; align-items:center; gap:10px; }
+.sec::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,var(--border),transparent); }
+
+/* ── FORM ── */
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+@media(max-width:640px){ .form-grid{grid-template-columns:1fr} }
+
+.field { display:flex; flex-direction:column; gap:6px; }
+.field.full { grid-column:1/-1; }
+
+label { font-size:11px; font-weight:700; color:var(--text2); letter-spacing:1px; text-transform:uppercase; }
+
+input, select, textarea {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--r2); padding:11px 14px;
+  color:var(--text); font-family:'Syne',sans-serif; font-size:13px;
+  outline:none; transition:border-color 0.2s, box-shadow 0.2s;
+  width:100%;
+}
+input:focus, select:focus, textarea:focus {
+  border-color:var(--green2); box-shadow:0 0 0 3px rgba(34,197,94,0.1);
+}
+input::placeholder, textarea::placeholder { color:var(--text3); }
+select option { background:var(--card); }
+textarea { resize:vertical; min-height:80px; font-family:'Tiro Devanagari Hindi',serif; }
+
+.radio-group { display:flex; gap:10px; flex-wrap:wrap; }
+.radio-item { display:flex; align-items:center; gap:7px; cursor:pointer; }
+.radio-item input[type=radio] { width:auto; accent-color:var(--green); }
+.radio-item span { font-size:13px; color:var(--text2); }
+
+/* ── BUTTONS ── */
+.btn {
+  padding:12px 24px; border-radius:var(--r2); font-size:13px; font-weight:800;
+  cursor:pointer; transition:all 0.25s; font-family:'Syne',sans-serif;
+  border:1.5px solid; display:inline-flex; align-items:center; gap:8px;
+}
+.btn-primary { background:var(--green2); color:#0c1a0e; border-color:var(--green2); }
+.btn-primary:hover { background:var(--green); transform:translateY(-2px); box-shadow:0 6px 20px rgba(34,197,94,0.3); }
+.btn-outline { background:transparent; color:var(--green); border-color:var(--border2); }
+.btn-outline:hover { background:var(--green-dim); }
+.btn-gold { background:var(--gold); color:#1a0a00; border-color:var(--gold); }
+.btn-gold:hover { background:var(--amber); transform:translateY(-2px); }
+.btn:disabled { opacity:0.4; cursor:not-allowed; transform:none!important; }
+
+/* ── FARMER CARD ── */
+.farmer-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--r); padding:20px;
+  display:none; margin-top:20px; animation:fadeIn 0.3s ease;
+}
+.farmer-card.show { display:block; }
+.farmer-card-head { display:flex; align-items:center; gap:14px; margin-bottom:16px; }
+.farmer-avatar {
+  width:52px; height:52px; border-radius:14px;
+  background:linear-gradient(135deg,var(--card2),var(--border));
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+  border:1px solid var(--border2);
+}
+.farmer-meta h3 { font-size:16px; font-weight:800; color:var(--text); }
+.farmer-meta p { font-size:12px; color:var(--text3); margin-top:2px; }
+.farmer-tags { display:flex; flex-wrap:wrap; gap:8px; }
+.ftag {
+  background:var(--green-dim); border:1px solid rgba(74,222,128,0.2);
+  border-radius:8px; padding:4px 12px; font-size:11px; color:var(--green); font-weight:700;
+}
+.ftag.gold { background:var(--gold-dim); border-color:rgba(251,191,36,0.2); color:var(--gold); }
+
+/* ── CHAT ── */
+.chat-layout { display:grid; grid-template-columns:260px 1fr; gap:20px; height:560px; }
+@media(max-width:680px){ .chat-layout{grid-template-columns:1fr; height:auto} }
+
+.chat-sidebar {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--r); padding:16px; display:flex; flex-direction:column; gap:10px; overflow-y:auto;
+}
+.sidebar-label { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text3); margin-bottom:4px; }
+
+.farmer-chip {
+  background:var(--bg3); border:1px solid var(--border);
+  border-radius:10px; padding:10px 12px; cursor:pointer;
+  transition:all 0.2s; display:flex; align-items:center; gap:10px;
+}
+.farmer-chip:hover, .farmer-chip.active {
+  border-color:var(--green2); background:var(--green-dim);
+}
+.chip-icon { font-size:20px; }
+.chip-text h5 { font-size:12px; font-weight:700; color:var(--text); }
+.chip-text p { font-size:10px; color:var(--text3); margin-top:1px; }
+.chip-dot { width:7px; height:7px; border-radius:50%; background:var(--text3); margin-left:auto; flex-shrink:0; }
+.chip-dot.active { background:var(--green); box-shadow:0 0 6px rgba(74,222,128,0.5); }
+
+.chat-main {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--r); display:flex; flex-direction:column; overflow:hidden;
+}
+.chat-top {
+  padding:14px 18px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:12px;
+  background:var(--bg3);
+}
+.chat-top-icon {
+  width:36px; height:36px; border-radius:10px;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+}
+.chat-top h3 { font-size:13px; font-weight:800; }
+.chat-top p { font-size:10px; color:var(--green); letter-spacing:1px; }
+
+.messages {
+  flex:1; overflow-y:auto; padding:16px;
+  display:flex; flex-direction:column; gap:12px;
+  scroll-behavior:smooth;
+}
+.messages::-webkit-scrollbar { width:4px; }
+.messages::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+.bubble {
+  max-width:82%; padding:11px 15px; border-radius:12px;
+  font-size:13px; line-height:1.7; animation:fadeIn 0.25s ease;
+}
+.bubble.user {
+  background:var(--bg3); color:var(--text2); align-self:flex-end;
+  border-bottom-right-radius:3px; border:1px solid var(--border);
+  font-family:'Syne',sans-serif;
+}
+.bubble.ai {
+  background:var(--green-dim2); color:var(--text); align-self:flex-start;
+  border-bottom-left-radius:3px; border:1px solid rgba(74,222,128,0.15);
+  border-left:2px solid var(--green2); font-family:'Tiro Devanagari Hindi',serif;
+}
+.bubble .blabel { font-size:9px; font-weight:700; letter-spacing:2px; color:var(--green); text-transform:uppercase; margin-bottom:5px; font-family:'Syne',sans-serif; }
+.bubble .btime { font-size:10px; color:var(--text3); margin-top:6px; font-family:'JetBrains Mono',monospace; }
+.bubble strong { color:var(--green); }
+
+.typing-bubble {
+  display:flex; gap:5px; padding:12px 15px;
+  background:var(--green-dim2); border:1px solid rgba(74,222,128,0.15);
+  border-left:2px solid var(--green2); border-radius:12px; border-bottom-left-radius:3px;
+  align-self:flex-start; align-items:center;
+}
+.typing-bubble span { width:6px; height:6px; background:var(--green); border-radius:50%; animation:tbounce 1s infinite; }
+.typing-bubble span:nth-child(2){animation-delay:0.2s}
+.typing-bubble span:nth-child(3){animation-delay:0.4s}
+@keyframes tbounce{0%,100%{transform:translateY(0);opacity:0.4}50%{transform:translateY(-5px);opacity:1}}
+.typing-bubble.hide{display:none}
+
+.chat-input-area {
+  padding:12px 16px; border-top:1px solid var(--border);
+  background:var(--bg3); display:flex; gap:10px; align-items:center;
+}
+.chat-input {
+  flex:1; background:var(--card); border:1px solid var(--border);
+  border-radius:22px; padding:10px 16px; color:var(--text);
+  font-family:'Tiro Devanagari Hindi',serif; font-size:13px; outline:none;
+}
+.chat-input:focus { border-color:var(--green2); }
+.chat-input::placeholder { color:var(--text3); }
+.chat-send {
+  width:38px; height:38px; border-radius:50%; background:var(--green2);
+  border:none; cursor:pointer; display:flex;align-items:center;justify-content:center;
+  color:#0c1a0e; font-size:15px; transition:all 0.2s; flex-shrink:0;
+}
+.chat-send:hover { background:var(--green); transform:scale(1.08); }
+
+.quick-bar { padding:8px 16px 0; background:var(--bg3); display:flex; gap:8px; flex-wrap:wrap; }
+.qc { background:transparent; border:1px solid var(--border); border-radius:16px; padding:5px 12px; font-size:11px; color:var(--text2); cursor:pointer; font-family:'Syne',sans-serif; transition:all 0.2s; }
+.qc:hover { border-color:var(--green2); color:var(--green); background:var(--green-dim); }
+
+/* ── MESSAGES PANEL ── */
+.msg-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+@media(max-width:640px){ .msg-grid{grid-template-columns:1fr} }
+
+.msg-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--r); overflow:hidden;
+}
+.msg-card-head {
+  padding:14px 18px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:10px; background:var(--bg3);
+}
+.msg-card-head .icon { font-size:20px; }
+.msg-card-head h3 { font-size:13px; font-weight:800; }
+.msg-card-head .ch { font-size:10px; color:var(--text3); letter-spacing:1px; margin-top:1px; }
+
+.msg-body { padding:16px; }
+.msg-box {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:10px; padding:14px; margin-bottom:12px;
+  font-family:'Tiro Devanagari Hindi',serif; font-size:13px;
+  color:var(--text2); line-height:1.8; min-height:120px;
+  position:relative;
+}
+.msg-box.generated { border-color:var(--green2); color:var(--text); }
+.msg-box .placeholder { color:var(--text3); font-style:italic; font-family:'Syne',sans-serif; font-size:12px; }
+
+.char-count { font-size:10px; color:var(--text3); font-family:'JetBrains Mono',monospace; margin-bottom:10px; }
+
+.btn-row { display:flex; gap:8px; flex-wrap:wrap; }
+
+.copy-flash {
+  position:fixed; bottom:28px; right:28px;
+  background:var(--green2); color:#0c1a0e;
+  padding:12px 24px; border-radius:12px; font-size:13px; font-weight:800;
+  box-shadow:0 8px 24px rgba(34,197,94,0.4);
+  animation:flashIn 0.3s ease; z-index:999; display:none;
+}
+@keyframes flashIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+/* stats */
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+@media(max-width:580px){ .stats-row{grid-template-columns:repeat(2,1fr)} }
+.stat-box {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--r2); padding:16px; text-align:center;
+}
+.stat-box .num { font-size:28px; font-weight:800; color:var(--green); line-height:1; margin-bottom:4px; font-family:'JetBrains Mono',monospace; }
+.stat-box .lbl { font-size:10px; color:var(--text3); letter-spacing:1px; text-transform:uppercase; font-family:'Tiro Devanagari Hindi',serif; }
+
+/* sending animation */
+.send-log {
+  background:var(--bg); border:1px solid var(--border); border-radius:10px;
+  padding:12px 14px; font-family:'JetBrains Mono',monospace; font-size:11px;
+  color:var(--text2); line-height:2; max-height:120px; overflow-y:auto;
+  margin-top:10px; display:none;
+}
+.send-log.show { display:block; }
+.log-line { animation:fadeIn 0.2s ease; }
+.log-line.ok { color:var(--green); }
+.log-line.info { color:var(--gold); }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-brand">
+    <div class="tb-logo">🌾</div>
+    <div>
+      <h1>Kisan AI Agent MVP</h1>
+      <p>CHANGE TechLab · Internal Tool</p>
+    </div>
+  </div>
+  <div class="tb-right">
+    <span class="api-status" id="apiStatus">● API Ready</span>
+    <div class="tb-pill"><div class="tb-dot"></div><span>Claude Sonnet</span></div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('onboard',this)">
+    📋 Farmer Onboarding <span class="tab-badge" id="farmerCount">0</span>
+  </button>
+  <button class="tab" onclick="switchTab('chat',this)">
+    🤖 AI Agent Chat
+  </button>
+  <button class="tab" onclick="switchTab('messages',this)">
+    📨 Auto Messages <span class="tab-badge" id="msgCount">0</span>
+  </button>
+</div>
+
+<!-- ═══════════════ PANEL 1: ONBOARDING ═══════════════ -->
+<div class="panel active" id="panel-onboard">
+
+  <div class="stats-row">
+    <div class="stat-box"><div class="num" id="s1">0</div><div class="lbl">Farmers Registered</div></div>
+    <div class="stat-box"><div class="num" id="s2">0</div><div class="lbl">Kg Ready Stock</div></div>
+    <div class="stat-box"><div class="num" id="s3">0</div><div class="lbl">Organic Certified</div></div>
+    <div class="stat-box"><div class="num" id="s4">0</div><div class="lbl">Deals Closed</div></div>
+  </div>
+
+  <div class="sec">📋 नया किसान जोड़ें</div>
+
+  <div class="form-grid">
+    <div class="field">
+      <label>किसान का नाम *</label>
+      <input id="fName" placeholder="e.g. Ramesh Negi" />
+    </div>
+    <div class="field">
+      <label>WhatsApp नंबर *</label>
+      <input id="fPhone" placeholder="+91 98xxx xxxxx" />
+    </div>
+    <div class="field">
+      <label>Email (optional)</label>
+      <input id="fEmail" placeholder="farmer@email.com" />
+    </div>
+    <div class="field">
+      <label>जिला *</label>
+      <select id="fDistrict">
+        <option value="">-- चुनें --</option>
+        <option>Tehri Garhwal</option>
+        <option>Pauri Garhwal</option>
+        <option>Uttarkashi</option>
+        <option>Chamoli</option>
+        <option>Dehradun</option>
+        <option>Haridwar</option>
+        <option>Nainital</option>
+        <option>Almora</option>
+        <option>Pithoragarh</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>फसल का नाम *</label>
+      <select id="fCrop">
+        <option value="">-- चुनें --</option>
+        <option>Chia Seeds (चिया सीड्स)</option>
+        <option>Rajma (राजमा)</option>
+        <option>Haldi (हल्दी)</option>
+        <option>Adrak (अदरक)</option>
+        <option>Gehun (गेहूं)</option>
+        <option>Mandua (मंडुआ)</option>
+        <option>Jhangora (झंगोरा)</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>उपलब्ध मात्रा (KG) *</label>
+      <input id="fQty" type="number" placeholder="e.g. 300" />
+    </div>
+    <div class="field">
+      <label>पैकेजिंग</label>
+      <select id="fPack">
+        <option>25 KG PP Bags</option>
+        <option>50 KG PP Bags</option>
+        <option>Jute Bags</option>
+        <option>As per buyer requirement</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Certification</label>
+      <div class="radio-group">
+        <label class="radio-item"><input type="radio" name="cert" value="PGS-India Certified" checked><span>PGS-India Certified</span></label>
+        <label class="radio-item"><input type="radio" name="cert" value="Organic (Uncertified)"><span>Organic (uncertified)</span></label>
+        <label class="radio-item"><input type="radio" name="cert" value="Natural Farming"><span>Natural Farming</span></label>
+      </div>
+    </div>
+    <div class="field full">
+      <label>विशेष जानकारी</label>
+      <textarea id="fNotes" placeholder="Triple cleaned, sun dried, ready for immediate dispatch..."></textarea>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <button class="btn btn-primary" onclick="registerFarmer()">✅ किसान Register करें</button>
+    <button class="btn btn-outline" onclick="clearForm()">🔄 Clear</button>
+  </div>
+
+  <!-- Farmer Card -->
+  <div class="farmer-card" id="farmerCard">
+    <div class="farmer-card-head">
+      <div class="farmer-avatar">👨‍🌾</div>
+      <div class="farmer-meta">
+        <h3 id="fcName">—</h3>
+        <p id="fcMeta">—</p>
+      </div>
+    </div>
+    <div class="farmer-tags" id="fcTags"></div>
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="goToChat()">🤖 AI Agent se Buyers Dhundho</button>
+      <button class="btn btn-gold" onclick="goToMessages()">📨 Auto Messages Generate Karo</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ PANEL 2: AI CHAT ═══════════════ -->
+<div class="panel" id="panel-chat">
+
+  <div class="sec">🤖 AI Agent — Real Claude API se Powered</div>
+
+  <div style="background:var(--gold-dim);border:1px solid rgba(251,191,36,0.2);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--gold);display:flex;gap:10px;align-items:center;">
+    ⚠️ <span>Yeh Claude Sonnet API se directly powered hai. Farmer select karo → Agent unke liye buyers dhundhega aur strategy bataega.</span>
+  </div>
+
+  <div class="chat-layout">
+    <!-- Sidebar -->
+    <div class="chat-sidebar">
+      <div class="sidebar-label">Registered Farmers</div>
+      <div id="farmerList">
+        <div style="color:var(--text3);font-size:12px;padding:8px;">Pehle koi farmer register karein...</div>
+      </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat-main">
+      <div class="chat-top">
+        <div class="chat-top-icon">🤖</div>
+        <div>
+          <h3>Kisan Sahayak Agent</h3>
+          <p>PGS-INDIA CERTIFIED · CHANGE TECHLAB</p>
+        </div>
+        <div style="margin-left:auto;font-size:11px;color:var(--text3);" id="activeFarmerLabel">No farmer selected</div>
+      </div>
+
+      <div class="quick-bar" id="quickBar">
+        <button class="qc" onclick="sendQuick('Is farmer ke liye top buyers kaun hain?')">🔍 Buyers dhundho</button>
+        <button class="qc" onclick="sendQuick('Best price kya milegi aaj?')">💰 Price check</button>
+        <button class="qc" onclick="sendQuick('Deal close karne ki strategy batao')">🤝 Deal strategy</button>
+        <button class="qc" onclick="sendQuick('Sample bhejne ka process kya hoga?')">📦 Sample process</button>
+        <button class="qc" onclick="sendQuick('UUOPB aur e-NAM ke baare mein batao')">🏛️ Govt channels</button>
+      </div>
+
+      <div class="messages" id="messages">
+        <div class="bubble ai">
+          <div class="blabel">KISAN SAHAYAK · CHANGE TECHLAB</div>
+          Namaste! 🙏 Main aapka <strong>Kisan AI Agent</strong> hoon — Claude se powered.<br><br>
+          Koi farmer left panel se select karein, phir main unki fasal ke liye:<br>
+          • Buyers dhundhne ki strategy dunga<br>
+          • WhatsApp/Email messages draft karunga<br>
+          • Price negotiation tips dunga<br>
+          • PGS-India Certificate se trust build karunga
+          <div class="btime">Ready ✓</div>
+        </div>
+      </div>
+
+      <div class="typing-bubble hide" id="typingBubble"><span></span><span></span><span></span></div>
+
+      <div class="chat-input-area">
+        <input class="chat-input" id="chatInput" placeholder="Agent se poochhen..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){sendChat();event.preventDefault()}" />
+        <button class="chat-send" onclick="sendChat()">➤</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ PANEL 3: MESSAGES ═══════════════ -->
+<div class="panel" id="panel-messages">
+
+  <div class="sec">📨 Auto Message Generator</div>
+
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:24px;">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
+      <div class="field" style="flex:1;min-width:200px;">
+        <label>Farmer Select karein</label>
+        <select id="msgFarmer" onchange="loadFarmerForMsg()">
+          <option value="">-- Farmer Select karein --</option>
+        </select>
+      </div>
+      <div class="field" style="flex:1;min-width:160px;">
+        <label>Buyer Type</label>
+        <select id="buyerType">
+          <option value="wholesale">Wholesale Trader</option>
+          <option value="organic">Organic Brand</option>
+          <option value="exporter">Exporter</option>
+          <option value="retail">Retail Chain</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="generateMessages()" id="genBtn">⚡ AI se Generate Karo</button>
+    </div>
+  </div>
+
+  <div class="msg-grid">
+    <!-- WhatsApp -->
+    <div class="msg-card">
+      <div class="msg-card-head">
+        <span class="icon">📱</span>
+        <div>
+          <h3>WhatsApp Message</h3>
+          <div class="ch">HINDI · INFORMAL · TRUST-BUILDING</div>
+        </div>
+      </div>
+      <div class="msg-body">
+        <div class="msg-box" id="waBox">
+          <span class="placeholder">Farmer select karke "Generate" dabayein...</span>
+        </div>
+        <div class="char-count" id="waCount">0 characters</div>
+        <div class="btn-row">
+          <button class="btn btn-outline" onclick="copyMsg('waBox','WhatsApp')" id="waCopy" disabled>📋 Copy</button>
+          <button class="btn btn-outline" onclick="simulateSend('wa')" id="waSend" disabled>📤 Send Simulate</button>
+        </div>
+        <div class="send-log" id="waLog"></div>
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="msg-card">
+      <div class="msg-card-head">
+        <span class="icon">📧</span>
+        <div>
+          <h3>Email Message</h3>
+          <div class="ch">ENGLISH · FORMAL · PROFESSIONAL</div>
+        </div>
+      </div>
+      <div class="msg-body">
+        <div class="msg-box" id="emailBox">
+          <span class="placeholder">Farmer select karke "Generate" dabayein...</span>
+        </div>
+        <div class="char-count" id="emailCount">0 characters</div>
+        <div class="btn-row">
+          <button class="btn btn-outline" onclick="copyMsg('emailBox','Email')" id="emailCopy" disabled>📋 Copy</button>
+          <button class="btn btn-outline" onclick="simulateSend('email')" id="emailSend" disabled>📤 Send Simulate</button>
+        </div>
+        <div class="send-log" id="emailLog"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buyer targets -->
+  <div class="sec">🎯 Target Buyers Database</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">
+    <div id="buyerTable" style="padding:16px;color:var(--text3);font-size:13px;">Farmers register hone ke baad buyers list yahaan dikhegi...</div>
+  </div>
+
+</div>
+
+</div><!-- /app -->
+
+<!-- Copy flash -->
+<div class="copy-flash" id="copyFlash">✅ Copied to clipboard!</div>
+
+<script>
+// ─── STATE ───────────────────────────────
+let farmers = [];
+let activeFarmer = null;
+let chatHistory = [];
+let generatedMsgs = { wa: '', email: '' };
+
+// ─── SYSTEM PROMPT ───────────────────────
+function buildSystemPrompt(farmer) {
+  return `Tum CHANGE TechLab ka Kisan AI Agent ho — Uttarakhand ke farmers ki fasal bechne mein madad karte ho.
+
+ACTIVE FARMER PROFILE:
+- Naam: ${farmer.name}
+- Location: ${farmer.district}, Uttarakhand
+- Fasal: ${farmer.crop}
+- Matra: ${farmer.qty} KG (Ready Stock)
+- Certification: ${farmer.cert}
+- Packaging: ${farmer.pack}
+- Notes: ${farmer.notes || 'N/A'}
+- Phone: ${farmer.phone}
+
+TUMHARA KAAM:
+1. Is farmer ke liye relevant bulk buyers dhundho (Delhi, Dehradun, Haridwar mein)
+2. Har buyer ke baare mein: naam, location, estimated price, contact approach batao
+3. Deal closing strategy do — price negotiation, payment terms, sample process
+4. Har response mein "PGS-India Certified" aur "Chemical-free" words use karo
+5. Simple Hinglish mein baat karo — farmer-friendly tone
+
+TRUST KEYWORDS (hamesha use karo): "PGS-India Certified", "Chemical-free", "Himalayan origin", "Triple Cleaned", "Direct from Farm"
+
+Concise raho — 4-6 bullet points max. Practical aur actionable advice do.`;
+}
+
+// ─── FARMER REGISTRATION ─────────────────
+function registerFarmer() {
+  const name = document.getElementById('fName').value.trim();
+  const phone = document.getElementById('fPhone').value.trim();
+  const district = document.getElementById('fDistrict').value;
+  const crop = document.getElementById('fCrop').value;
+  const qty = document.getElementById('fQty').value;
+
+  if (!name || !phone || !district || !crop || !qty) {
+    alert('Kripya sabhi * fields bharein!'); return;
+  }
+
+  const cert = document.querySelector('input[name="cert"]:checked').value;
+  const farmer = {
+    id: Date.now(),
+    name, phone,
+    email: document.getElementById('fEmail').value,
+    district, crop, qty,
+    pack: document.getElementById('fPack').value,
+    cert,
+    notes: document.getElementById('fNotes').value
+  };
+
+  farmers.push(farmer);
+  updateStats();
+  showFarmerCard(farmer);
+  updateFarmerLists();
+}
+
+function showFarmerCard(f) {
+  document.getElementById('fcName').textContent = f.name;
+  document.getElementById('fcMeta').textContent = `${f.district} · ${f.phone}`;
+  const tags = document.getElementById('fcTags');
+  tags.innerHTML = `
+    <span class="ftag">🌱 ${f.crop}</span>
+    <span class="ftag">${f.qty} KG Ready</span>
+    <span class="ftag gold">🏅 ${f.cert}</span>
+    <span class="ftag">${f.pack}</span>
+  `;
+  document.getElementById('farmerCard').classList.add('show');
+  animateCount('s1', farmers.length);
+  animateCount('s2', farmers.reduce((a,b)=>a+parseInt(b.qty||0),0));
+  animateCount('s3', farmers.filter(f=>f.cert.includes('PGS')).length);
+}
+
+function animateCount(id, target) {
+  const el = document.getElementById(id);
+  let cur = parseInt(el.textContent)||0;
+  const step = Math.ceil((target-cur)/15);
+  const iv = setInterval(()=>{
+    cur = Math.min(cur+step, target);
+    el.textContent = cur;
+    if(cur>=target) clearInterval(iv);
+  }, 40);
+}
+
+function updateStats() {
+  document.getElementById('farmerCount').textContent = farmers.length;
+  document.getElementById('s1').textContent = farmers.length;
+  document.getElementById('s2').textContent = farmers.reduce((a,b)=>a+parseInt(b.qty||0),0);
+  document.getElementById('s3').textContent = farmers.filter(f=>f.cert.includes('PGS')).length;
+}
+
+function updateFarmerLists() {
+  // Chat sidebar
+  const list = document.getElementById('farmerList');
+  list.innerHTML = farmers.map(f=>`
+    <div class="farmer-chip ${activeFarmer?.id===f.id?'active':''}" onclick="selectFarmer(${f.id})">
+      <span class="chip-icon">👨‍🌾</span>
+      <div class="chip-text">
+        <h5>${f.name}</h5>
+        <p>${f.crop} · ${f.qty}kg</p>
+      </div>
+      <div class="chip-dot ${activeFarmer?.id===f.id?'active':''}"></div>
+    </div>
+  `).join('');
+
+  // Message dropdown
+  const sel = document.getElementById('msgFarmer');
+  sel.innerHTML = '<option value="">-- Farmer Select karein --</option>' +
+    farmers.map(f=>`<option value="${f.id}">${f.name} — ${f.crop} (${f.qty}kg)</option>`).join('');
+}
+
+function clearForm() {
+  ['fName','fPhone','fEmail','fQty','fNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fDistrict').value='';
+  document.getElementById('fCrop').value='';
+}
+
+function goToChat() { switchTab('chat', document.querySelectorAll('.tab')[1]); }
+function goToMessages() { switchTab('messages', document.querySelectorAll('.tab')[2]); }
+
+// ─── CHAT ────────────────────────────────
+function selectFarmer(id) {
+  activeFarmer = farmers.find(f=>f.id===id);
+  updateFarmerLists();
+  document.getElementById('activeFarmerLabel').textContent = activeFarmer.name + ' · ' + activeFarmer.crop;
+  chatHistory = [];
+  const msgs = document.getElementById('messages');
+  msgs.innerHTML = `
+    <div class="bubble ai">
+      <div class="blabel">AGENT · CHANGE TECHLAB</div>
+      <strong>${activeFarmer.name} ji</strong> ke liye ready hoon! 🙏<br><br>
+      Farm: <strong>${activeFarmer.district}, Uttarakhand</strong><br>
+      Fasal: <strong>${activeFarmer.crop}</strong> — ${activeFarmer.qty} KG<br>
+      Certification: <strong>${activeFarmer.cert}</strong><br><br>
+      Kya dhundhu? Buyers, price strategy, ya deal approach?
+      <div class="btime">Active ✓</div>
+    </div>`;
+}
+
+function sendQuick(text) {
+  document.getElementById('chatInput').value = text;
+  sendChat();
+}
+
+async function sendChat() {
+  if (!activeFarmer) { alert('Pehle koi farmer select karein!'); return; }
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  addBubble(text, 'user');
+  input.value = '';
+  chatHistory.push({ role:'user', content:text });
+
+  const tb = document.getElementById('typingBubble');
+  tb.classList.remove('hide');
+  document.getElementById('messages').appendChild(tb);
+  document.getElementById('messages').scrollTop = 99999;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system: buildSystemPrompt(activeFarmer),
+        messages: chatHistory
+      })
+    });
+    const data = await res.json();
+    tb.classList.add('hide');
+
+    const reply = data.content?.[0]?.text || 'Kuch problem aayi. Dobara try karein.';
+    chatHistory.push({ role:'assistant', content:reply });
+    addBubble(reply, 'ai');
+  } catch(e) {
+    tb.classList.add('hide');
+    addBubble('⚠️ API error. Check console.', 'ai');
+  }
+}
+
+function addBubble(text, type) {
+  const msgs = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className = 'bubble ' + type;
+  const now = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  if(type==='ai') d.innerHTML = `<div class="blabel">KISAN SAHAYAK · AI</div>${text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}<div class="btime">${now}</div>`;
+  else d.innerHTML = `${text}<div class="btime">${now}</div>`;
+  msgs.appendChild(d);
+  msgs.scrollTop = 99999;
+}
+
+// ─── MESSAGES ────────────────────────────
+function loadFarmerForMsg() {
+  const id = parseInt(document.getElementById('msgFarmer').value);
+  if(id) activeFarmer = farmers.find(f=>f.id===id);
+}
+
+async function generateMessages() {
+  if (!activeFarmer && !document.getElementById('msgFarmer').value) {
+    alert('Pehle farmer select karein!'); return;
+  }
+  if(document.getElementById('msgFarmer').value) loadFarmerForMsg();
+  if(!activeFarmer) { alert('Farmer nahi mila!'); return; }
+
+  const buyerType = document.getElementById('buyerType').value;
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true; btn.textContent = '⏳ Generating...';
+
+  const waBox = document.getElementById('waBox');
+  const emailBox = document.getElementById('emailBox');
+  waBox.innerHTML = '<span class="placeholder">AI likh raha hai...</span>';
+  emailBox.innerHTML = '<span class="placeholder">AI likh raha hai...</span>';
+
+  const prompt = `Ek Uttarakhand farmer ke liye DO messages likho:
+
+FARMER:
+- Naam: ${activeFarmer.name}
+- Location: ${activeFarmer.district}, Uttarakhand  
+- Fasal: ${activeFarmer.crop}
+- Matra: ${activeFarmer.qty} KG Ready Stock
+- Certification: ${activeFarmer.cert}
+- Packaging: ${activeFarmer.pack}
+- Notes: ${activeFarmer.notes || 'Triple Cleaned, Premium Quality'}
+
+BUYER TYPE: ${buyerType}
+
+MESSAGE 1 — WhatsApp (Hindi, informal, max 200 words):
+- "PGS-India Certified" aur "Chemical-free" words include karo
+- Friendly tone, emojis use karo
+- Sample offer zaroor karo
+- Himalayan origin highlight karo
+
+MESSAGE 2 — Email (English, formal, max 250 words):
+- Subject line include karo
+- Professional format
+- "PGS-India Certified Chemical-free" use karo
+- Product highlights, payment terms, CTA include karo
+
+Format:
+===WHATSAPP===
+[WhatsApp message yahaan]
+
+===EMAIL===
+Subject: [subject]
+[Email body yahaan]`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+
+    const waPart = text.split('===EMAIL===')[0].replace('===WHATSAPP===','').trim();
+    const emailPart = text.split('===EMAIL===')[1]?.trim() || '';
+
+    generatedMsgs.wa = waPart;
+    generatedMsgs.email = emailPart;
+
+    waBox.classList.add('generated');
+    emailBox.classList.add('generated');
+    waBox.innerHTML = waPart.replace(/\n/g,'<br>');
+    emailBox.innerHTML = emailPart.replace(/\n/g,'<br>');
+
+    document.getElementById('waCount').textContent = waPart.length + ' characters';
+    document.getElementById('emailCount').textContent = emailPart.length + ' characters';
+
+    ['waCopy','waSend','emailCopy','emailSend'].forEach(id=>{
+      document.getElementById(id).disabled = false;
+    });
+
+    document.getElementById('msgCount').textContent = parseInt(document.getElementById('msgCount').textContent||0)+1;
+
+    showBuyerTable();
+
+  } catch(e) {
+    waBox.innerHTML = '⚠️ API error. Retry karein.';
+    emailBox.innerHTML = '⚠️ API error.';
+  }
+
+  btn.disabled = false; btn.textContent = '⚡ AI se Generate Karo';
+}
+
+function showBuyerTable() {
+  const buyers = [
+    { name:'Himalaya Organics Pvt Ltd', loc:'New Delhi', type:'Organic Brand', phone:'98370-24236', status:'Ready to Contact' },
+    { name:'NutriStore Wholesale', loc:'Dehradun', type:'Wholesaler', phone:'97581-04971', status:'Ready to Contact' },
+    { name:'GreenField Trading', loc:'Haridwar', type:'Wholesale Trader', phone:'9999xxxxxx', status:'Ready to Contact' },
+    { name:'Organic India Exports', loc:'Mumbai', type:'Exporter', phone:'91690-06100', status:'High Priority' },
+    { name:'Ahinsa Enterprises', loc:'Haridwar', type:'Wholesaler', phone:'9999xxxxxx', status:'Ready to Contact' },
+  ];
+  document.getElementById('buyerTable').innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <tr style="border-bottom:1px solid var(--border);color:var(--text3);">
+        <th style="padding:10px 14px;text-align:left;font-weight:700;letter-spacing:1px;">BUYER</th>
+        <th style="padding:10px 14px;text-align:left;">LOCATION</th>
+        <th style="padding:10px 14px;text-align:left;">TYPE</th>
+        <th style="padding:10px 14px;text-align:left;">PHONE</th>
+        <th style="padding:10px 14px;text-align:left;">STATUS</th>
+      </tr>
+      ${buyers.map(b=>`
+        <tr style="border-bottom:1px solid var(--border);transition:background 0.2s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+          <td style="padding:10px 14px;font-weight:700;color:var(--text)">${b.name}</td>
+          <td style="padding:10px 14px;color:var(--text2)">📍 ${b.loc}</td>
+          <td style="padding:10px 14px;color:var(--text3)">${b.type}</td>
+          <td style="padding:10px 14px;font-family:'JetBrains Mono',monospace;color:var(--green);font-size:11px">📞 ${b.phone}</td>
+          <td style="padding:10px 14px"><span style="background:var(--green-dim);border:1px solid rgba(74,222,128,0.2);border-radius:6px;padding:3px 10px;font-size:10px;color:var(--green);font-weight:700">${b.status}</span></td>
+        </tr>`).join('')}
+    </table>`;
+}
+
+function copyMsg(boxId, label) {
+  const text = boxId === 'waBox' ? generatedMsgs.wa : generatedMsgs.email;
+  navigator.clipboard.writeText(text).then(()=>{
+    const flash = document.getElementById('copyFlash');
+    flash.textContent = `✅ ${label} message copied!`;
+    flash.style.display='block';
+    setTimeout(()=>flash.style.display='none', 2200);
+  });
+}
+
+function simulateSend(type) {
+  const logId = type+'Log';
+  const log = document.getElementById(logId);
+  log.classList.add('show');
+  log.innerHTML = '';
+  const steps = type==='wa' ? [
+    {t:'info',m:'[10:32:01] Connecting to WhatsApp Business API...'},
+    {t:'ok', m:'[10:32:02] ✓ Connected'},
+    {t:'info',m:'[10:32:03] Sending to Himalaya Organics (+91 98370-24236)...'},
+    {t:'ok', m:'[10:32:04] ✓ Delivered'},
+    {t:'info',m:'[10:32:05] Sending to NutriStore Dehradun (+91 97581-04971)...'},
+    {t:'ok', m:'[10:32:06] ✓ Delivered'},
+    {t:'ok', m:'[10:32:07] ✓ 2/2 messages sent successfully!'},
+  ] : [
+    {t:'info',m:'[10:32:01] Connecting to SMTP server...'},
+    {t:'ok', m:'[10:32:02] ✓ Connected'},
+    {t:'info',m:'[10:32:03] Sending to buy@himorg.in...'},
+    {t:'ok', m:'[10:32:04] ✓ Sent'},
+    {t:'info',m:'[10:32:05] Sending to organic@exportsindia.com...'},
+    {t:'ok', m:'[10:32:06] ✓ Sent'},
+    {t:'ok', m:'[10:32:07] ✓ Email campaign complete!'},
+  ];
+  steps.forEach((s,i)=>{
+    setTimeout(()=>{
+      const line = document.createElement('div');
+      line.className = 'log-line '+s.t;
+      line.textContent = s.m;
+      log.appendChild(line);
+      log.scrollTop=9999;
+    }, i*600);
+  });
+}
+
+// ─── TABS ────────────────────────────────
+function switchTab(id, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+id).classList.add('active');
+}
+</script>
+</body>
+</html>
