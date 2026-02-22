@@ -786,7 +786,7 @@ async function sendChat() {
   document.getElementById('messages').appendChild(tb);
   document.getElementById('messages').scrollTop = 99999;
 
- try { const res = await fetch('https://kisan-proxy.anupamrayal.workers.dev', { method:'POST', headers:{ 'Content-Type':'application/json', 'x-api-key': 'sk-ant-api03-Phi...wQAA', 'anthropic-version': '2023-06-01', },
+ try { const res = await fetch('https://kisan-proxy.anupamrayal.workers.dev', { method:'POST', headers:{ 'Content-Type':'application/json', },
       body: JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1000,
